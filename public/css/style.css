@@ -588,6 +588,38 @@ body {
   color: #aaa;
 }
 
+.photo-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-approve {
+  background: linear-gradient(145deg, #2ed573, #27ae60);
+  color: white;
+  flex: 1;
+  padding: 12px;
+}
+
+.btn-reject {
+  background: linear-gradient(145deg, #ff4757, #c0392b);
+  color: white;
+  flex: 1;
+  padding: 12px;
+}
+
+.photo-buttons .approved {
+  color: #2ed573;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.photo-buttons .rejected {
+  color: #ff4757;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
 /* Error */
 .error {
   position: fixed;

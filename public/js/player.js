@@ -339,6 +339,15 @@ socket.on('photo-sent', () => {
   showError('Photo sent to host!');
 });
 
+// Photo approved/rejected by host
+socket.on('photo-result', ({ approved }) => {
+  if (approved) {
+    showError('✓ Photo APPROVED by host!');
+  } else {
+    showError('✗ Photo REJECTED - try again!');
+  }
+});
+
 // Game over
 socket.on('game-over', ({ winner, reason }) => {
   clearInterval(meetingTimer);

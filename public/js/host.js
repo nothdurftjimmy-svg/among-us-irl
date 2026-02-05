@@ -161,20 +161,45 @@ socket.on('voting-results', ({ ejected, deadCount }) => {
 });
 
 // Photo received
-socket.on('photo-received', ({ from, data }) => {
+let photoId = 0;
+socket.on('photo-received', ({ from, data, playerId }) => {
   document.getElementById('photosArea').classList.remove('hidden');
   const list = document.getElementById('photoList');
   
+  const currentPhotoId = photoId++;
   const div = document.createElement('div');
   div.className = 'photo-item';
+  div.id = `photo-${currentPhotoId}`;
   div.innerHTML = `
     <img src="${data}" alt="Photo from ${from}">
     <p>From: ${from} - ${new Date().toLocaleTimeString()}</p>
+    <div class="photo-buttons">
+      <button class="btn btn-approve" onclick="approvePhoto('${playerId}', ${currentPhotoId})">✓ GOOD</button>
+      <button class="btn btn-reject" onclick="rejectPhoto('${playerId}', ${currentPhotoId})">✗ BAD</button>
+    </div>
   `;
   list.insertBefore(div, list.firstChild);
   
   addPing(`📷 Photo received from ${from}`);
 });
+
+// Approve photo
+window.approvePhoto = (playerId, photoElementId) => {
+  socket.emit('photo-response', { playerId, approved: true });
+  const photoDiv = document.getElementById(`photo-${photoElementId}`);
+  if (photoDiv) {
+    photoDiv.querySelector('.photo-buttons').innerHTML = '<span class="approved">✓ APPROVED</span>';
+  }
+};
+
+// Reject photo
+window.rejectPhoto = (playerId, photoElementId) => {
+  socket.emit('photo-response', { playerId, approved: false });
+  const photoDiv = document.getElementById(`photo-${photoElementId}`);
+  if (photoDiv) {
+    photoDiv.querySelector('.photo-buttons').innerHTML = '<span class="rejected">✗ REJECTED</span>';
+  }
+};
 
 // Game over
 socket.on('game-over', ({ winner, reason }) => {

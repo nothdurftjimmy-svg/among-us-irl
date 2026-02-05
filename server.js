@@ -442,17 +442,28 @@ io.on('connection', (socket) => {
     
     game.photos.push({
       from: player.name,
+      playerId: socket.id,
       data: photoData,
       time: Date.now()
     });
     
-    // Notify host
+    // Notify host with player ID for response
     io.to(game.hostId).emit('photo-received', {
       from: player.name,
+      playerId: socket.id,
       data: photoData
     });
     
     socket.emit('photo-sent');
+  });
+  
+  // Host responds to photo (approve/reject)
+  socket.on('photo-response', ({ playerId, approved }) => {
+    const game = games[socket.roomCode];
+    if (!game || !socket.isHost) return;
+    
+    // Notify the player of the result
+    io.to(playerId).emit('photo-result', { approved });
   });
 
   // Get game state (for reconnection)
