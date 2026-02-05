@@ -89,6 +89,32 @@ io.on('connection', (socket) => {
     socket.emit('game-created', { roomCode });
     console.log('Game created:', roomCode);
   });
+  
+  // Host rejoins existing game
+  socket.on('rejoin-host', ({ roomCode }) => {
+    const game = games[roomCode];
+    
+    if (!game) {
+      socket.emit('error', { message: 'Game not found' });
+      return;
+    }
+    
+    // Update host socket ID
+    game.hostId = socket.id;
+    socket.join(roomCode);
+    socket.roomCode = roomCode;
+    socket.isHost = true;
+    
+    // Send current player list
+    const playerList = Object.entries(game.players).map(([id, p]) => ({
+      id,
+      name: p.name,
+      number: p.number
+    }));
+    
+    socket.emit('player-joined', { players: playerList });
+    console.log('Host rejoined game:', roomCode);
+  });
 
   // Player joins a game
   socket.on('join-game', ({ roomCode, playerName }) => {

@@ -10,12 +10,12 @@ if (!roomCode) {
   window.location.href = 'index.html';
 }
 
-// Reconnect to game
-socket.emit('create-game', { imposterCount: 1 }); // Will be overwritten
+// Rejoin the existing game as host
+socket.emit('rejoin-host', { roomCode });
 
 socket.on('connect', () => {
-  // Re-create game with same room code concept
-  // For simplicity, host needs to stay connected
+  // Host reconnected
+  socket.emit('rejoin-host', { roomCode });
 });
 
 // Display room code
