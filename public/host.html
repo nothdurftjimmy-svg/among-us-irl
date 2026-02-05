@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Host - Among Us IRL</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container host-container">
+    <!-- Lobby View -->
+    <div id="lobby">
+      <h1 class="title">HOST</h1>
+      <div class="room-code">
+        Room Code: <span id="roomCode"></span>
+      </div>
+      
+      <div class="players-section">
+        <h3>Players (<span id="playerCount">0</span>)</h3>
+        <div id="playerList" class="player-list"></div>
+      </div>
+      
+      <button id="startGameBtn" class="btn btn-start">START GAME</button>
+    </div>
+    
+    <!-- Game View -->
+    <div id="gameView" class="hidden">
+      <div class="header">
+        <span class="room-code-small">Room: <span id="roomCodeGame"></span></span>
+        <span class="dead-count">Dead: <span id="deadCount">0</span></span>
+      </div>
+      
+      <div class="task-meter">
+        <div class="task-bar">
+          <div id="taskProgress" class="task-fill" style="width: 0%"></div>
+        </div>
+        <span id="taskPercent">0%</span>
+      </div>
+      
+      <div class="players-section">
+        <h3>Players & Roles</h3>
+        <div id="gamePlayerList" class="player-list"></div>
+      </div>
+      
+      <div id="pingArea" class="ping-area">
+        <h3>Notifications</h3>
+        <div id="pingList" class="ping-list"></div>
+      </div>
+      
+      <div id="meetingRequest" class="meeting-request hidden">
+        <h3 id="meetingRequestTitle"></h3>
+        <p id="meetingRequestInfo"></p>
+        <button id="startMeetingBtn" class="btn btn-meeting">START MEETING</button>
+      </div>
+      
+      <div id="photosArea" class="photos-area hidden">
+        <h3>Photos Received</h3>
+        <div id="photoList" class="photo-list"></div>
+      </div>
+    </div>
+    
+    <!-- Meeting Overlay -->
+    <div id="meetingOverlay" class="meeting-overlay hidden">
+      <div class="meeting-content">
+        <h2 id="meetingTitle" class="meeting-title"></h2>
+        <p id="meetingCaller"></p>
+        <div id="meetingTimer" class="meeting-timer"></div>
+        <div id="meetingPhase"></div>
+      </div>
+    </div>
+    
+    <!-- Game Over Overlay -->
+    <div id="gameOverOverlay" class="game-over-overlay hidden">
+      <h1 id="gameOverTitle"></h1>
+      <p id="gameOverReason"></p>
+      <button onclick="location.reload()" class="btn">NEW GAME</button>
+    </div>
+  </div>
+  
+  <audio id="meetingSound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZaYl5SQiYB2amBXUE1OUllkaHN+iJKaoqmtsLCsqKOfmZKLgXZpXVNLR0dLUl1oc4GQnquxtrm5trOuqaOclI2DdmpdVExGQ0RJUFtmcoGPnaqzuLy+vLm1sKqkm5KIf3JkWE9IRERDSE9aZnSCkZ+qtry/wL25s62mopmPg3dsX1RLRkJBQkZNWWZ0g5Gfq7W8v8C+u7awr6mkm5KHfHBjV01FP0BARU5ZZXWEkp+qtry/wL65tK6opaCWjH50aF9YUk1LTE9VYGt4hpSeo6mtr7CuraehnJaQin92bWRcV1RRUVVaYmt1foiRmZ6io6SjoJ2ZlI+JgnpxaWJdWVdWWFtiaG52fYSKj5KUlJOQjYmFgHt2b2lkX1xaWlteY2lwe4GIjZGTlJSSkIyIhH97dW5pZGBeXV1fY2dsc3l/hYqNj5CQj4yJhYJ+eXRua2dmZGRkZmhrb3R4fYGFh4iIiIaEgX56dnJvbWtqa2tsbW9ydXh7foCCg4ODgoB+fHl2c3Fvbm1tbm9wcnR2eHp8fX5/f39+fXx6eHZz" type="audio/wav">
+  </audio>
+  
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/host.js"></script>
+</body>
+</html>

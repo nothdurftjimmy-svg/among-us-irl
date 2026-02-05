@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Player - Among Us IRL</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container player-container">
+    <!-- Waiting View -->
+    <div id="waitingView">
+      <h1 class="title">WAITING</h1>
+      <p>Room: <span id="roomCode"></span></p>
+      <p>Name: <span id="playerName"></span></p>
+      <p>Number: <span id="playerNumber"></span></p>
+      <p class="waiting-text">Waiting for host to start...</p>
+    </div>
+    
+    <!-- Game View -->
+    <div id="gameView" class="hidden">
+      <div class="header">
+        <span id="playerInfo"></span>
+        <span class="dead-count">Dead: <span id="deadCount">0</span></span>
+      </div>
+      
+      <div id="roleDisplay" class="role-display"></div>
+      
+      <div class="task-meter">
+        <div class="task-bar">
+          <div id="taskProgress" class="task-fill" style="width: 0%"></div>
+        </div>
+        <span id="taskPercent">0%</span> (75% to win)
+      </div>
+      
+      <!-- Tasks Section (Crewmates only) -->
+      <div id="tasksSection" class="tasks-section">
+        <h3>Your Tasks: <span id="tasksDone">0</span>/6</h3>
+        <button id="completeTaskBtn" class="btn btn-task">COMPLETE TASK</button>
+      </div>
+      
+      <!-- Meeting Buttons -->
+      <div id="meetingButtons" class="meeting-buttons">
+        <button id="emergencyBtn" class="btn btn-emergency">
+          🚨 EMERGENCY MEETING
+          <span id="emergencyCooldown" class="cooldown"></span>
+        </button>
+        <button id="reportBodyBtn" class="btn btn-report">
+          ☠️ REPORT BODY
+          <span id="reportCooldown" class="cooldown"></span>
+        </button>
+      </div>
+      
+      <!-- Photo Upload -->
+      <div class="photo-section">
+        <input type="file" id="photoInput" accept="image/*" capture="environment" class="hidden">
+        <button id="photoBtn" class="btn btn-photo">📷 SEND PHOTO TO HOST</button>
+      </div>
+    </div>
+    
+    <!-- Ghost View -->
+    <div id="ghostView" class="hidden">
+      <div class="ghost-banner">👻 YOU ARE A GHOST 👻</div>
+      
+      <div class="header">
+        <span id="ghostPlayerInfo"></span>
+        <span class="dead-count">Dead: <span id="ghostDeadCount">0</span></span>
+      </div>
+      
+      <div class="task-meter">
+        <div class="task-bar">
+          <div id="ghostTaskProgress" class="task-fill" style="width: 0%"></div>
+        </div>
+        <span id="ghostTaskPercent">0%</span>
+      </div>
+      
+      <div id="ghostTasksSection" class="tasks-section">
+        <h3>Your Tasks: <span id="ghostTasksDone">0</span>/6</h3>
+        <button id="ghostCompleteTaskBtn" class="btn btn-task">COMPLETE TASK</button>
+      </div>
+      
+      <p class="ghost-note">You can still complete tasks to help your team!</p>
+      <p class="ghost-note">You cannot call meetings or vote.</p>
+    </div>
+    
+    <!-- Meeting Alert Overlay -->
+    <div id="meetingAlert" class="meeting-alert hidden">
+      <h1 id="meetingAlertTitle"></h1>
+    </div>
+    
+    <!-- Meeting Overlay -->
+    <div id="meetingOverlay" class="meeting-overlay hidden">
+      <div class="meeting-content">
+        <h2 id="meetingTitle" class="meeting-title"></h2>
+        <p id="meetingCaller"></p>
+        
+        <div id="meetingTimer" class="meeting-timer"></div>
+        <div id="meetingPhase"></div>
+        
+        <!-- Dead players shown during meeting -->
+        <div id="deadPlayersDisplay" class="dead-players-display hidden">
+          <h4>☠️ Dead Players:</h4>
+          <div id="deadPlayersList"></div>
+        </div>
+        
+        <!-- Voting Section -->
+        <div id="votingSection" class="voting-section hidden">
+          <h3>Vote to Eject:</h3>
+          <div id="voteOptions" class="vote-options"></div>
+          <button id="skipVoteBtn" class="btn btn-skip">SKIP VOTE</button>
+        </div>
+        
+        <div id="voteConfirmed" class="vote-confirmed hidden">
+          ✓ Vote Submitted
+        </div>
+      </div>
+    </div>
+    
+    <!-- Ghost Meeting View -->
+    <div id="ghostMeetingOverlay" class="meeting-overlay ghost-meeting hidden">
+      <div class="meeting-content">
+        <h2 class="meeting-title">MEETING IN PROGRESS</h2>
+        <div class="skull-display">💀💀💀</div>
+        <p>You are dead and cannot vote.</p>
+        <div id="ghostMeetingTimer" class="meeting-timer"></div>
+      </div>
+    </div>
+    
+    <!-- Voting Results Overlay -->
+    <div id="resultsOverlay" class="results-overlay hidden">
+      <div class="results-content">
+        <h2 id="resultsTitle"></h2>
+        <p id="resultsInfo"></p>
+      </div>
+    </div>
+    
+    <!-- Game Over Overlay -->
+    <div id="gameOverOverlay" class="game-over-overlay hidden">
+      <h1 id="gameOverTitle"></h1>
+      <p id="gameOverReason"></p>
+      <button onclick="location.href='index.html'" class="btn">BACK TO MENU</button>
+    </div>
+    
+    <div id="error" class="error hidden"></div>
+  </div>
+  
+  <audio id="meetingSound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZaYl5SQiYB2amBXUE1OUllkaHN+iJKaoqmtsLCsqKOfmZKLgXZpXVNLR0dLUl1oc4GQnquxtrm5trOuqaOclI2DdmpdVExGQ0RJUFtmcoGPnaqzuLy+vLm1sKqkm5KIf3JkWE9IRERDSE9aZnSCkZ+qtry/wL25s62mopmPg3dsX1RLRkJBQkZNWWZ0g5Gfq7W8v8C+u7awr6mkm5KHfHBjV01FP0BARU5ZZXWEkp+qtry/wL65tK6opaCWjH50aF9YUk1LTE9VYGt4hpSeo6mtr7CuraehnJaQin92bWRcV1RRUVVaYmt1foiRmZ6io6SjoJ2ZlI+JgnpxaWJdWVdWWFtiaG52fYSKj5KUlJOQjYmFgHt2b2lkX1xaWlteY2lwe4GIjZGTlJSSkIyIhH97dW5pZGBeXV1fY2dsc3l/hYqNj5CQj4yJhYJ+eXRua2dmZGRkZmhrb3R4fYGFh4iIiIaEgX56dnJvbWtqa2tsbW9ydXh7foCCg4ODgoB+fHl2c3Fvbm1tbm9wcnR2eHp8fX5/f39+fXx6eHZz" type="audio/wav">
+  </audio>
+  
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/player.js"></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Among Us - IRL</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">AMONG US</h1>
+    <h2 class="subtitle">IRL Edition</h2>
+    
+    <div id="menu" class="menu">
+      <button id="hostBtn" class="btn btn-host">HOST GAME</button>
+      <button id="joinBtn" class="btn btn-join">JOIN GAME</button>
+    </div>
+    
+    <div id="hostSetup" class="panel hidden">
+      <h3>Host Setup</h3>
+      <label>Number of Imposters:</label>
+      <select id="imposterCount">
+        <option value="1">1 Imposter</option>
+        <option value="2">2 Imposters</option>
+        <option value="3">3 Imposters</option>
+      </select>
+      <button id="createGameBtn" class="btn btn-create">CREATE GAME</button>
+      <button class="btn btn-back" onclick="showMenu()">BACK</button>
+    </div>
+    
+    <div id="joinPanel" class="panel hidden">
+      <h3>Join Game</h3>
+      <input type="text" id="roomCodeInput" placeholder="ROOM CODE" maxlength="6">
+      <input type="text" id="playerNameInput" placeholder="YOUR NAME" maxlength="15">
+      <button id="joinGameBtn" class="btn btn-join">JOIN</button>
+      <button class="btn btn-back" onclick="showMenu()">BACK</button>
+    </div>
+    
+    <div id="error" class="error hidden"></div>
+  </div>
+  
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    
+    document.getElementById('hostBtn').onclick = () => {
+      document.getElementById('menu').classList.add('hidden');
+      document.getElementById('hostSetup').classList.remove('hidden');
+    };
+    
+    document.getElementById('joinBtn').onclick = () => {
+      document.getElementById('menu').classList.add('hidden');
+      document.getElementById('joinPanel').classList.remove('hidden');
+    };
+    
+    function showMenu() {
+      document.getElementById('menu').classList.remove('hidden');
+      document.getElementById('hostSetup').classList.add('hidden');
+      document.getElementById('joinPanel').classList.add('hidden');
+    }
+    
+    document.getElementById('createGameBtn').onclick = () => {
+      const imposterCount = parseInt(document.getElementById('imposterCount').value);
+      socket.emit('create-game', { imposterCount });
+    };
+    
+    document.getElementById('joinGameBtn').onclick = () => {
+      const roomCode = document.getElementById('roomCodeInput').value.trim();
+      const playerName = document.getElementById('playerNameInput').value.trim();
+      
+      if (!roomCode || !playerName) {
+        showError('Please enter room code and name');
+        return;
+      }
+      
+      socket.emit('join-game', { roomCode, playerName });
+    };
+    
+    socket.on('game-created', ({ roomCode }) => {
+      sessionStorage.setItem('roomCode', roomCode);
+      sessionStorage.setItem('isHost', 'true');
+      window.location.href = 'host.html';
+    });
+    
+    socket.on('joined-game', ({ roomCode, playerName, playerNumber }) => {
+      sessionStorage.setItem('roomCode', roomCode);
+      sessionStorage.setItem('playerName', playerName);
+      sessionStorage.setItem('playerNumber', playerNumber);
+      window.location.href = 'player.html';
+    });
+    
+    socket.on('error', ({ message }) => {
+      showError(message);
+    });
+    
+    function showError(msg) {
+      const err = document.getElementById('error');
+      err.textContent = msg;
+      err.classList.remove('hidden');
+      setTimeout(() => err.classList.add('hidden'), 3000);
+    }
+  </script>
+</body>
+</html>
