@@ -73,20 +73,27 @@
         return;
       }
       
-      socket.emit('join-game', { roomCode, playerName });
+      // Just check if room exists, don't join yet
+      socket.emit('check-room', { roomCode });
+      sessionStorage.setItem('pendingRoomCode', roomCode.toUpperCase());
+      sessionStorage.setItem('pendingPlayerName', playerName);
     };
+    
+    socket.on('room-check-result', ({ exists, message }) => {
+      if (exists) {
+        // Room exists, redirect to player.html which will do the actual join
+        sessionStorage.setItem('roomCode', sessionStorage.getItem('pendingRoomCode'));
+        sessionStorage.setItem('playerName', sessionStorage.getItem('pendingPlayerName'));
+        window.location.href = 'player.html';
+      } else {
+        showError(message || 'Could not join game');
+      }
+    });
     
     socket.on('game-created', ({ roomCode }) => {
       sessionStorage.setItem('roomCode', roomCode);
       sessionStorage.setItem('isHost', 'true');
       window.location.href = 'host.html';
-    });
-    
-    socket.on('joined-game', ({ roomCode, playerName, playerNumber }) => {
-      sessionStorage.setItem('roomCode', roomCode);
-      sessionStorage.setItem('playerName', playerName);
-      sessionStorage.setItem('playerNumber', playerNumber);
-      window.location.href = 'player.html';
     });
     
     socket.on('error', ({ message }) => {

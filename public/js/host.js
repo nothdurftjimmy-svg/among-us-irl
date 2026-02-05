@@ -10,11 +10,8 @@ if (!roomCode) {
   window.location.href = 'index.html';
 }
 
-// Rejoin the existing game as host
-socket.emit('rejoin-host', { roomCode });
-
+// Rejoin the existing game as host on connect
 socket.on('connect', () => {
-  // Host reconnected
   socket.emit('rejoin-host', { roomCode });
 });
 
@@ -34,7 +31,7 @@ function updatePlayerList() {
   
   list.innerHTML = players.map(p => `
     <div class="player-item">
-      <span>#${p.number} - ${p.name}</span>
+      <span>${p.name} [${(p.numbers || []).join(', ')}]</span>
     </div>
   `).join('');
 }
@@ -58,7 +55,7 @@ function updateGamePlayerList() {
   list.innerHTML = players.map(p => `
     <div class="player-item ${p.status !== 'alive' ? 'dead' : ''}">
       <div>
-        <span>#${p.number} - ${p.name}</span>
+        <span>${p.name} [${(p.numbers || []).join(', ')}]</span>
         <span class="role ${p.role}">${p.role.toUpperCase()}</span>
       </div>
       ${p.status === 'alive' ? `

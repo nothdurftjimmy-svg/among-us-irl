@@ -13,7 +13,7 @@
       <h1 class="title">WAITING</h1>
       <p>Room: <span id="roomCode"></span></p>
       <p>Name: <span id="playerName"></span></p>
-      <p>Number: <span id="playerNumber"></span></p>
+      <p>Your Numbers: <span id="playerNumbers"></span></p>
       <p class="waiting-text">Waiting for host to start...</p>
     </div>
     
@@ -35,8 +35,8 @@
       
       <!-- Tasks Section (Crewmates only) -->
       <div id="tasksSection" class="tasks-section">
-        <h3>Your Tasks: <span id="tasksDone">0</span>/6</h3>
         <button id="completeTaskBtn" class="btn btn-task">COMPLETE TASK</button>
+        <button id="markSelfDeadBtn" class="btn btn-report" style="margin-top: 10px;">💀 MARK SELF AS DEAD</button>
       </div>
       
       <!-- Meeting Buttons -->
@@ -75,7 +75,6 @@
       </div>
       
       <div id="ghostTasksSection" class="tasks-section">
-        <h3>Your Tasks: <span id="ghostTasksDone">0</span>/6</h3>
         <button id="ghostCompleteTaskBtn" class="btn btn-task">COMPLETE TASK</button>
       </div>
       

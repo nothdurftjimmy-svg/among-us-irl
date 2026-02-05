@@ -18,10 +18,10 @@ function generateRoomCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-// Generate 6 unique random numbers from 1-15
-function generatePlayerNumbers(count) {
+// Generate 6 unique random numbers from 1-15 for a single player
+function generatePlayerNumbers() {
   const numbers = [];
-  while (numbers.length < count) {
+  while (numbers.length < 6) {
     const num = Math.floor(Math.random() * 15) + 1;
     if (!numbers.includes(num)) numbers.push(num);
   }
@@ -63,11 +63,23 @@ function countDeadPlayers(game) {
 function getAlivePlayers(game) {
   return Object.entries(game.players)
     .filter(([id, p]) => p.status === 'alive')
-    .map(([id, p]) => ({ id, name: p.name, number: p.number }));
+    .map(([id, p]) => ({ id, name: p.name, numbers: p.numbers }));
 }
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
+
+  // Check if room exists (without joining)
+  socket.on('check-room', ({ roomCode }) => {
+    const game = games[roomCode.toUpperCase()];
+    if (!game) {
+      socket.emit('room-check-result', { exists: false, message: 'Game not found' });
+    } else if (game.started) {
+      socket.emit('room-check-result', { exists: false, message: 'Game already started' });
+    } else {
+      socket.emit('room-check-result', { exists: true });
+    }
+  });
 
   // Host creates a game
   socket.on('create-game', ({ imposterCount }) => {
@@ -109,7 +121,7 @@ io.on('connection', (socket) => {
     const playerList = Object.entries(game.players).map(([id, p]) => ({
       id,
       name: p.name,
-      number: p.number
+      numbers: p.numbers || []
     }));
     
     socket.emit('player-joined', { players: playerList });
@@ -125,28 +137,60 @@ io.on('connection', (socket) => {
       return;
     }
     
+    // Check if player with this name already exists (reconnection)
+    const existingPlayer = Object.entries(game.players).find(([id, p]) => p.name === playerName);
+    
+    // Handle reconnection during started game
     if (game.started) {
+      if (existingPlayer) {
+        // Allow reconnection - update socket ID
+        const [oldId, playerData] = existingPlayer;
+        delete game.players[oldId];
+        game.players[socket.id] = playerData;
+        
+        socket.join(roomCode.toUpperCase());
+        socket.roomCode = roomCode.toUpperCase();
+        socket.isHost = false;
+        
+        // Send current game state to reconnected player
+        socket.emit('game-started', {
+          role: playerData.role,
+          numbers: playerData.numbers,
+          tasks: 6
+        });
+        
+        if (playerData.status === 'dead' || playerData.status === 'voted-out') {
+          socket.emit('you-died');
+        }
+        
+        socket.emit('task-completed', { 
+          completed: playerData.tasksCompleted,
+          total: 6
+        });
+        socket.emit('task-progress', { progress: calculateTaskProgress(game) });
+        socket.emit('dead-count-updated', { deadCount: countDeadPlayers(game) });
+        return;
+      }
       socket.emit('error', { message: 'Game already started' });
       return;
     }
     
-    const playerNumbers = generatePlayerNumbers(Object.keys(game.players).length + 1);
-    const playerNumber = playerNumbers[playerNumbers.length - 1];
-    
-    game.players[socket.id] = {
-      name: playerName,
-      number: playerNumber,
-      role: null,
-      status: 'alive',
-      tasksCompleted: 0,
-      lastMeetingTime: 0
-    };
-    
-    // Reassign numbers to ensure uniqueness
-    const allNumbers = generatePlayerNumbers(Object.keys(game.players).length);
-    Object.values(game.players).forEach((player, index) => {
-      player.number = allNumbers[index];
-    });
+    if (existingPlayer) {
+      // Player is reconnecting - remove old entry and add with new socket ID
+      const [oldId, playerData] = existingPlayer;
+      delete game.players[oldId];
+      game.players[socket.id] = playerData;
+    } else {
+      // New player - generate 6 numbers for them
+      game.players[socket.id] = {
+        name: playerName,
+        numbers: generatePlayerNumbers(),
+        role: null,
+        status: 'alive',
+        tasksCompleted: 0,
+        lastMeetingTime: 0
+      };
+    }
     
     socket.join(roomCode.toUpperCase());
     socket.roomCode = roomCode.toUpperCase();
@@ -155,7 +199,7 @@ io.on('connection', (socket) => {
     socket.emit('joined-game', { 
       roomCode: roomCode.toUpperCase(),
       playerName,
-      playerNumber: game.players[socket.id].number
+      playerNumbers: game.players[socket.id].numbers
     });
     
     // Notify host
@@ -163,7 +207,7 @@ io.on('connection', (socket) => {
       players: Object.entries(game.players).map(([id, p]) => ({
         id,
         name: p.name,
-        number: p.number
+        numbers: p.numbers
       }))
     });
     
@@ -187,7 +231,7 @@ io.on('connection', (socket) => {
     Object.entries(game.players).forEach(([playerId, player]) => {
       io.to(playerId).emit('game-started', {
         role: player.role,
-        number: player.number,
+        numbers: player.numbers,
         tasks: 6
       });
     });
@@ -197,7 +241,7 @@ io.on('connection', (socket) => {
       players: Object.entries(game.players).map(([id, p]) => ({
         id,
         name: p.name,
-        number: p.number,
+        numbers: p.numbers,
         role: p.role,
         status: p.status
       }))
@@ -281,7 +325,7 @@ io.on('connection', (socket) => {
     
     const deadPlayers = Object.entries(game.players)
       .filter(([id, p]) => p.status === 'dead' || p.status === 'voted-out')
-      .map(([id, p]) => ({ id, name: p.name, number: p.number }));
+      .map(([id, p]) => ({ id, name: p.name, numbers: p.numbers }));
     
     const alivePlayers = getAlivePlayers(game);
     
@@ -354,6 +398,35 @@ io.on('connection', (socket) => {
     // Update host
     socket.emit('player-status-updated', {
       playerId,
+      status: 'dead',
+      deadCount
+    });
+  });
+  
+  // Player marks themselves as dead
+  socket.on('mark-self-dead', () => {
+    const game = games[socket.roomCode];
+    if (!game || !game.started) return;
+    
+    const player = game.players[socket.id];
+    if (!player || player.status !== 'alive') return;
+    
+    player.status = 'dead';
+    const deadCount = countDeadPlayers(game);
+    
+    // Notify the player
+    socket.emit('you-died');
+    
+    // Notify all players of dead count
+    io.to(socket.roomCode).emit('dead-count-updated', { deadCount });
+    
+    // Notify host
+    io.to(game.hostId).emit('host-ping', {
+      type: 'death',
+      message: `${player.name} marked themselves as dead`
+    });
+    io.to(game.hostId).emit('player-status-updated', {
+      playerId: socket.id,
       status: 'dead',
       deadCount
     });

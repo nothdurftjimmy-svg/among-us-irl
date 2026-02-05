@@ -3,7 +3,7 @@ const socket = io();
 // Get stored data
 const roomCode = sessionStorage.getItem('roomCode');
 const playerName = sessionStorage.getItem('playerName');
-const playerNumber = sessionStorage.getItem('playerNumber');
+let playerNumbers = JSON.parse(sessionStorage.getItem('playerNumbers') || '[]');
 
 let myRole = null;
 let myStatus = 'alive';
@@ -19,47 +19,61 @@ if (!roomCode || !playerName) {
 // Display initial info
 document.getElementById('roomCode').textContent = roomCode;
 document.getElementById('playerName').textContent = playerName;
-document.getElementById('playerNumber').textContent = playerNumber;
+if (playerNumbers.length > 0) {
+  document.getElementById('playerNumbers').textContent = playerNumbers.join(', ');
+}
 
-// Rejoin game on connect
+// Join game on connect
 socket.on('connect', () => {
   socket.emit('join-game', { roomCode, playerName });
 });
 
-// Already joined (from redirect)
-socket.on('joined-game', () => {
-  // Already showing waiting view
+// Joined successfully
+socket.on('joined-game', ({ playerNumbers: numbers }) => {
+  if (numbers) {
+    playerNumbers = numbers;
+    sessionStorage.setItem('playerNumbers', JSON.stringify(numbers));
+    document.getElementById('playerNumbers').textContent = numbers.join(', ');
+  }
 });
 
 // Game started
-socket.on('game-started', ({ role, number, tasks }) => {
+socket.on('game-started', ({ role, numbers, tasks }) => {
   myRole = role;
+  if (numbers) {
+    playerNumbers = numbers;
+  }
   
   document.getElementById('waitingView').classList.add('hidden');
   document.getElementById('gameView').classList.remove('hidden');
   
-  document.getElementById('playerInfo').textContent = `#${number} - ${playerName}`;
+  document.getElementById('playerInfo').textContent = `${playerName} [${playerNumbers.join(', ')}]`;
   
   const roleDisplay = document.getElementById('roleDisplay');
   roleDisplay.textContent = role.toUpperCase();
   roleDisplay.className = 'role-display ' + role;
   
-  // Hide tasks section for imposters
+  // Hide mark dead button for imposters
   if (role === 'imposter') {
-    document.getElementById('tasksSection').classList.add('hidden');
+    document.getElementById('markSelfDeadBtn').classList.add('hidden');
   }
 });
 
 // Complete task button
 document.getElementById('completeTaskBtn').onclick = () => {
-  if (tasksCompleted < 6) {
-    socket.emit('complete-task');
+  socket.emit('complete-task');
+};
+
+// Mark self as dead button
+document.getElementById('markSelfDeadBtn').onclick = () => {
+  if (confirm('Are you sure you want to mark yourself as dead?')) {
+    socket.emit('mark-self-dead');
   }
 };
 
 // Ghost complete task
 document.getElementById('ghostCompleteTaskBtn').onclick = () => {
-  if (tasksCompleted < 6 && myRole === 'crewmate') {
+  if (myRole === 'crewmate') {
     socket.emit('complete-task');
   }
 };
@@ -67,8 +81,6 @@ document.getElementById('ghostCompleteTaskBtn').onclick = () => {
 // Task completed
 socket.on('task-completed', ({ completed, total }) => {
   tasksCompleted = completed;
-  document.getElementById('tasksDone').textContent = completed;
-  document.getElementById('ghostTasksDone').textContent = completed;
   
   if (completed >= total) {
     document.getElementById('completeTaskBtn').disabled = true;
@@ -169,7 +181,7 @@ socket.on('meeting-started', ({ type, calledBy, alivePlayers: alive, deadPlayers
       if (deadPlayers && deadPlayers.length > 0) {
         document.getElementById('deadPlayersDisplay').classList.remove('hidden');
         document.getElementById('deadPlayersList').innerHTML = 
-          deadPlayers.map(p => `<span>💀 #${p.number} ${p.name}</span>`).join('<br>');
+          deadPlayers.map(p => `<span>💀 ${p.name} [${(p.numbers || []).join(', ')}]</span>`).join('<br>');
       } else {
         document.getElementById('deadPlayersDisplay').classList.add('hidden');
       }
@@ -198,7 +210,7 @@ socket.on('voting-started', ({ alivePlayers: alive, voteTime }) => {
       .filter(p => p.name !== playerName) // Can't vote for self
       .map(p => `
         <button class="vote-btn" onclick="vote('${p.id}')">
-          #${p.number} - ${p.name}
+          ${p.name} [${(p.numbers || []).join(', ')}]
         </button>
       `).join('');
     
@@ -267,8 +279,7 @@ socket.on('you-died', () => {
   document.getElementById('gameView').classList.add('hidden');
   document.getElementById('ghostView').classList.remove('hidden');
   
-  document.getElementById('ghostPlayerInfo').textContent = `#${playerNumber} - ${playerName} (GHOST)`;
-  document.getElementById('ghostTasksDone').textContent = tasksCompleted;
+  document.getElementById('ghostPlayerInfo').textContent = `${playerName} [${playerNumbers.join(', ')}] (GHOST)`;
   
   // Hide task section if imposter
   if (myRole === 'imposter') {
@@ -282,7 +293,7 @@ socket.on('you-ejected', () => {
   document.getElementById('gameView').classList.add('hidden');
   document.getElementById('ghostView').classList.remove('hidden');
   
-  document.getElementById('ghostPlayerInfo').textContent = `#${playerNumber} - ${playerName} (EJECTED)`;
+  document.getElementById('ghostPlayerInfo').textContent = `${playerName} [${playerNumbers.join(', ')}] (EJECTED)`;
 });
 
 // Photo upload
